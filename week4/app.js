@@ -4,12 +4,31 @@ const priceInput = document.getElementById("productPrice");
 const addBtn = document.getElementById("addBtn");
 const syncBtn = document.getElementById("syncBtn");
 const productList = document.getElementById("productList");
+const messageContainer = document.getElementById("messageContainer");
 
 // Global state
 let products = [];
-const API_URL = "https://jsonplaceholder.typicode.com/posts";
+let editingId = null; // Track if we are editing an item
+const API_URL = "http://localhost:3000/products";
 
-// Local Storage Helpers
+// Displays a dynamic message in the DOM.
+
+function showMessage(text, type) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = type === "success" ? "msg-success" : "msg-error";
+    msgDiv.textContent = text;
+
+    messageContainer.innerHTML = ""; // Clear previous messages
+    messageContainer.appendChild(msgDiv);
+
+    // Auto-remove message after 3 seconds
+    setTimeout(() => {
+        msgDiv.remove();
+    }, 3000);
+}
+
+// --- LOCAL STORAGE HELPERS ---
+
 function saveToStorage() {
     localStorage.setItem("products", JSON.stringify(products));
 }
@@ -19,146 +38,247 @@ function loadFromStorage() {
     if (saved) {
         products = JSON.parse(saved);
         renderProducts();
-        console.log("Data loaded from Local Storage");
+        console.log("Data loaded from Local Storage:", products);
     } else {
         fetchInitialData(); // GET initial data if storage is empty
     }
 }
 
+// FETCH API OPERATIONS 
+
 // GET - Fetch initial data from API
 async function fetchInitialData() {
     try {
-        const response = await fetch(API_URL + "?_limit=3");
+        const response = await fetch(API_URL);
         const data = await response.json();
+        console.log("API GET Response:", data);
+
         // Map API data to our product structure
         products = data.map(item => ({
             id: item.id,
-            name: item.title.slice(0, 15),
-            price: Math.floor(Math.random() * 100) + 1
+            name: item.name,
+            price: Number(item.price)
         }));
+
         saveToStorage();
         renderProducts();
-        console.log("Initial data fetched from API");
+        
+        console.log("Initial data fetched and synced");
     } catch (error) {
         console.error("Fetch error:", error);
     }
 }
 
-// Render products to the DOM
+// DOM MANIPULATION 
+
+// Render products to the DOM using manual node creation 
 function renderProducts() {
     productList.innerHTML = ""; // Clear list
+
     products.forEach((product, index) => {
+        // Create <li> element manually
         const li = document.createElement("li");
-        li.innerHTML = `
-            <span><strong>${product.name}</strong> - $${product.price}</span>
-            <div>
-                <button class="btn-edit" onclick="editProduct(${index})">Edit</button>
-                <button class="btn-delete" onclick="deleteProduct(${index}, ${product.id})">Delete</button>
-            </div>
-        `;
+        li.setAttribute("data-id", product.id);
+        
+        // Create info span
+        const span = document.createElement("span");
+        span.innerHTML = `<strong>${product.name}</strong> - $${product.price}`;
+        
+        // Create button container
+        const btnContainer = document.createElement("div");
+        
+        // Create Edit button
+        const editBtn = document.createElement("button");
+        editBtn.className = "btn-edit";
+        editBtn.textContent = "Edit";
+        editBtn.onclick = () => editProduct(index);
+        
+        // Create Delete button
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-delete";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.onclick = () => deleteProduct(index, product.id);
+        
+        // Assemble elements
+        btnContainer.appendChild(editBtn);
+        btnContainer.appendChild(deleteBtn);
+        li.appendChild(span);
+        li.appendChild(btnContainer);
+        
+        // Use appendChild for dynamic modification
         productList.appendChild(li);
     });
 }
 
-// Add new product
-addBtn.addEventListener("click", () => {
+// Add or Update product
+addBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim();
-    const price = priceInput.value.trim();
+    const priceValue = priceInput.value.trim();
 
-    // Task 2: Validation
-    if (!name || !price) {
-        alert("Please fill all fields!");
+    // Validation to prevent empty data
+    if (!name || !priceValue) {
+        showMessage("Please fill all fields!", "error");
         return;
     }
 
-    const newProduct = {
-        id: Date.now(), // Unique ID
-        name: name,
-        price: price
-    };
+    // Convert price to number (Numerical Validation)
+    const price = Number(priceValue);
+    if (isNaN(price) || price <= 0) {
+        showMessage("Please enter a valid price greater than 0.", "error");
+        return;
+    }
 
-    products.push(newProduct);
-    saveToStorage();
-    renderProducts();
+    if (editingId) {
+        // UPDATE MODE 
+        const index = products.findIndex(p => p.id === editingId);
+        if (index !== -1) {
+            const updatedProduct = {
+                ...products[index],
+                name: name,
+                price: price
+            };
+
+            // Update local state
+            products[index] = updatedProduct;
+            saveToStorage();
+            renderProducts();
+
+            // Reset UI
+            editingId = null;
+            addBtn.textContent = "Add Product";
+            addBtn.style.backgroundColor = "";
+            
+            showMessage("Product updated locally. Sync to save to API.", "success");
+        }
+    } else {
+        //  ADD MODE 
+        const newProduct = {
+            id: Date.now(), // Unique ID
+            name: name,
+            price: price
+        };
+
+        products.push(newProduct);
+        saveToStorage();
+        renderProducts();
+        
+        showMessage("Product added locally. Remember to sync with the API!", "success");
+    }
     
     // Clear inputs
     nameInput.value = "";
     priceInput.value = "";
-    console.log("Product added locally");
+    console.log("Local state updated:", products);
 });
 
-// DELETE - Remove product
+
+//  DELETE - Remove product using removeChild 
+
 async function deleteProduct(index, id) {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+
+    // Reset form if deleting current edit
+    if (editingId === id) {
+        editingId = null;
+        addBtn.textContent = "Add Product";
+        addBtn.style.backgroundColor = "";
+        nameInput.value = "";
+        priceInput.value = "";
+    }
+
     try {
-        // Simulate API delete
-        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        // Attempt to delete from API
+        const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        console.log("API DELETE Response status:", response.status);
         
+        // Remove from DOM
+        const liToRemove = productList.querySelector(`li[data-id='${id}']`);
+        if (liToRemove) {
+            productList.removeChild(liToRemove);
+        }
+
+        // Update state and storage
         products.splice(index, 1);
         saveToStorage();
-        renderProducts();
-        console.log("Product deleted (API & Local)");
+        
+        if (response.ok) {
+            showMessage("Product deleted from API and local storage", "success");
+        } else {
+            showMessage("Product removed locally", "success");
+        }
     } catch (error) {
         console.error("Delete error:", error);
-    }
-}
-
-//  PUT - Edit product
-async function editProduct(index) {
-    const newName = prompt("New product name:", products[index].name);
-    const newPrice = prompt("New product price:", products[index].price);
-
-    if (newName === null || newPrice === null) {
-        return;
-    }
-
-    const trimmedName = newName.trim();
-    const trimmedPrice = newPrice.trim();
-
-    if (!trimmedName || !trimmedPrice) {
-        alert("Please enter both name and price to update the product.");
-        return;
-    }
-
-    const updatedProduct = {
-        ...products[index],
-        name: trimmedName,
-        price: trimmedPrice
-    };
-
-    try {
-        // Simulate API update
-        await fetch(`${API_URL}/${updatedProduct.id}`, {
-            method: "PUT",
-            body: JSON.stringify(updatedProduct),
-            headers: { "Content-type": "application/json; charset=UTF-8" }
-        });
-
-        products[index] = updatedProduct;
+        showMessage("Connection error, product removed locally", "error");
+        
+        // Update UI anyway for UX
+        const liToRemove = productList.querySelector(`li[data-id='${id}']`);
+        if (liToRemove) productList.removeChild(liToRemove);
+        products.splice(index, 1);
         saveToStorage();
-        renderProducts();
-        console.log("Product updated (API & Local)");
-    } catch (error) {
-        console.error("Update error:", error);
     }
 }
 
-//  POST - Sync all data (Simulated)
+
+// Prepares the form for editing 
+
+function editProduct(index) {
+    const product = products[index];
+    
+    // Fill inputs
+    nameInput.value = product.name;
+    priceInput.value = product.price;
+
+    // Change button UI
+    editingId = product.id;
+    addBtn.textContent = "Save Product";
+    addBtn.style.backgroundColor = "#ffc107";
+    addBtn.style.color = "black";
+
+    showMessage("Editing: " + product.name, "success");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// BATCH SYNCHRONIZATION 
+
 syncBtn.addEventListener("click", async () => {
-    console.log("Starting sync...");
+    syncBtn.disabled = true;
+    syncBtn.textContent = "Syncing...";
+    showMessage("Syncing data with server...", "success");
+
+    let successCount = 0;
+
     try {
         for (const product of products) {
-            await fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify(product),
-                headers: { "Content-type": "application/json; charset=UTF-8" }
-            });
+            const checkResponse = await fetch(`${API_URL}/${product.id}`);
+            
+            if (checkResponse.ok) {
+                // Update existing
+                await fetch(`${API_URL}/${product.id}`, {
+                    method: "PUT",
+                    body: JSON.stringify(product),
+                    headers: { "Content-type": "application/json; charset=UTF-8" }
+                });
+            } else {
+                // Create new
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(product),
+                    headers: { "Content-type": "application/json; charset=UTF-8" }
+                });
+            }
+            successCount++;
         }
-        alert("All products synced with the API!");
-        console.log("Sync complete");
+        console.log("Sync successful. Items processed:", successCount);
+        showMessage(`Sync complete! ${successCount} items processed.`, "success");
+
     } catch (error) {
         console.error("Sync error:", error);
+        showMessage("Sync error. Check server connection.", "error");
+    } finally {
+        syncBtn.disabled = false;
+        syncBtn.textContent = "Sync with API";
     }
 });
 
-// Start app
+// Start application
 loadFromStorage();

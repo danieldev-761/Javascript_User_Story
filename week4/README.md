@@ -1,34 +1,50 @@
-# Week 4: Integrated Product Manager (CRUD & API)
+# M3S4: Integrated Product Manager (CRUD & API)
 
-This is the final project for Module 3. it integrates DOM manipulation, Local Storage, and asynchronous communication with an API using Fetch and `async/await`.
-
-## Objectives
-- Build a complete web application from scratch.
-- Use `Fetch API` for CRUD operations (GET, POST, PUT, DELETE).
-- Handle asynchronous code using `try...catch` and `async/await`.
-- Maintain data persistence using `Local Storage`.
-- Dynamically update the UI based on user interaction and server responses.
+This project represents the culmination of Module 3, integrating advanced JavaScript concepts such as dynamic DOM manipulation, Local Storage persistence, and robust API communication.
 
 ## Features
-1. **Full CRUD**: 
-   - **Create**: Add products locally.
-   - **Read**: Load data from Local Storage or fetch initial data from the API.
-   - **Update**: Edit existing products (simulated PUT request).
-   - **Delete**: Remove products (simulated DELETE request).
-2. **Offline Support**: Data is saved to `Local Storage`, so it persists after refreshing.
-3. **API Synchronization**: A "Sync" button to simulate sending local data to a remote server (POST).
-4. **Input Validation**: Ensures all fields are filled before adding.
 
-## How to use
-1. Open `index.html` in your browser.
-2. If it's your first time, the app will fetch 3 items from JSONPlaceholder automatically.
-3. Add your own products using the form.
-4. Use the **Edit** and **Delete** buttons to manage the list.
-5. Click **Sync with API** to see simulated POST requests in the **Network** tab of your browser's Developer Tools (F12).
+1.  **Full CRUD Operations**:
+    *   **Create**: Add products with real-time numerical validation.
+    *   **Read**: Automatic synchronization between Local Storage and the API.
+    *   **Update**: Integrated editing mode within the main form (no prompts).
+    *   **Delete**: Explicit removal of items using `removeChild` for optimal DOM management.
+2.  **Dynamic Messaging System**: Success and error feedbacks are rendered directly in the DOM, replacing standard browser alerts for a modern UX.
+3.  **Intelligent Batch Sync**: A synchronization mechanism that detects existing items to perform either `POST` (create) or `PUT` (update) requests, preventing data duplication.
+4.  **Local Persistence**: State is maintained across sessions using `localStorage`, ensuring a seamless user experience.
+5.  **Clean Code**: Implemented using ES6+ standards (`async/await`, `const/let`, Arrow functions) and structured with professional documentation.
+
+## Tech Stack
+*   **HTML5 / CSS3**: Modern layout and responsive feedback styles.
+*   **JavaScript (ES6+)**: Core logic and asynchronous operations.
+*   **JSON Server**: Local REST API simulation for full CRUD functionality.
+
+## Installation & Setup
+
+1.  **Clone the repository** (if applicable) and navigate to the `week4` directory.
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+3.  **Start the Local API**:
+    In the `week4` folder, run:
+    ```bash
+    npx json-server --watch db.json
+    ```
+4.  **Launch the App**: Open `index.html` in your favorite browser.
+
+## How to Use
+
+*   **Adding**: Fill in the "Product Name" and "Price", then click **Add Product**.
+*   **Editing**: Click **Edit** on any item. The form will switch to "Save Product" mode and highlight in yellow. Update the fields and click **Save**.
+*   **Deleting**: Click **Delete** and confirm the action. The item will be removed from the DOM and the API.
+*   **Syncing**: Click **Sync with API** to push all local modifications and new additions to the server at once.
 
 ## Project Structure
-- `index.html`: The user interface and internal CSS.
-- `app.js`: The engine of the app handling DOM, Storage, and Fetch.
+- `index.html`: Main structure and UI containers.
+- `style.css`: Modern styling and message feedback classes.
+- `app.js`: Core logic (DOM, Storage, Fetch API).
+- `db.json`: Local database file for the API.
 
 ## Author
-- Daniel Echeverría - Coder Riwi
+- **Daniel Echeverría** - Coder Riwi

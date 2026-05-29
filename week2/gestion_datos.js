@@ -10,7 +10,7 @@ const products = [
     { id: 4, name: "Monitor", price: 300 }
 ];
 
-console.log("--- TASK 1: Products Object ---");
+console.log("---  Products Object ---");
 console.log(products);
 
 
@@ -20,7 +20,7 @@ console.log(products);
 // Create a Set with duplicate values
 let uniqueNumbers = new Set([10, 20, 30, 20, 40, 10, 50]);
 
-console.log("\n--- TASK 2: Set Operations ---");
+console.log("\n--- Set Operations ---");
 console.log("Initial Set (duplicates automatically removed):", uniqueNumbers);
 
 // Add a new number using .add()
@@ -50,13 +50,13 @@ productCategories.set("Peripherals", "Mouse");
 productCategories.set("Accessories", "Keyboard");
 productCategories.set("Display", "Monitor");
 
-console.log("\n--- TASK 3: Product Categories Map ---");
+console.log("\n--- Product Categories Map ---");
 console.log(productCategories);
 
 
 // Demonstrates for...in, for...of, forEach(), and Object methods.
 
-console.log("\n--- TASK 4: Iteration Examples ---");
+console.log("\n---  Iteration Examples ---");
 
 // for...in to list properties and values of an object (the first product)
 console.log("Iterating over the first product object using for...in:");
@@ -88,13 +88,8 @@ console.log("Object.entries():", Object.entries(secondProduct));
 
 //  Ensures each product has valid id, name, and price.
 
-console.log("\n--- TASK 5: Validation and Testing ---");
+console.log("\n--- Validation and Testing ---");
 
-/**
- * Validates a product object.
- * @param {Object} product - The product to validate.
- * @returns {boolean} - True if valid, false otherwise.
- */
 
 function validateProduct(product) {
     const hasId = product.id !== undefined && product.id !== null;
@@ -120,6 +115,7 @@ console.table(validProducts);
 
 console.log("\nList of unique numbers (Set):");
 console.log([...uniqueNumbers]); // Converting to array for clear view
+
 
 console.log("\nCategories and product names (Map):");
 productCategories.forEach((value, key) => {
